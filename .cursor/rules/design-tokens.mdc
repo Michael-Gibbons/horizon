@@ -1,0 +1,287 @@
+# Design Tokens Rules
+
+Design tokens are the single source of truth for visual design decisions. They are defined in Figma using Tokens Studio and exported to this codebase. These rules govern how tokens are structured, named, and referenced.
+
+---
+
+## Architecture Overview
+
+This design system follows a **3-tier token architecture**:
+
+| Tier | Collection | Purpose | Can Reference |
+|------|------------|---------|---------------|
+| 1 | **Brand** | Raw primitive values (no meaning) | Nothing |
+| 2 | **Alias** | Semantic intent and meaning | Brand only |
+| 3 | **Mapped** | Component-ready, themed tokens | Alias only |
+
+A separate **Responsive** collection handles breakpoint-specific overrides.
+
+**Critical Rule**: Components may ONLY consume Mapped tokens. Never reference Brand or Alias tokens directly in components.
+
+---
+
+## Tier 1: Brand Collection
+
+### Purpose
+Contains raw, primitive values that define the brand's visual identity. These tokens carry **zero semantic meaning**—they are simply named values.
+
+### Color Tokens
+
+#### Structure
+- Store all colors as **6-digit hex values** (e.g., `#1A1A1A`, not `#1A1A1A80`)
+- Group colors by **hue family** (e.g., `blue`, `slate`, `green`)
+- Never imply usage in names (use `blue-500`, not `blue-primary`)
+
+#### Scale Convention
+| Scale Value | Meaning |
+|-------------|---------|
+| 100–400 | Lighter tints |
+| 500–600 | Base/mid-range |
+| 700–1200 | Darker shades |
+
+- **Default increment**: 100 (e.g., 100, 200, 300...)
+- **Intermediate values**: 50 (e.g., 150, 250...) when needed between steps
+- **Fine adjustments**: 25 (e.g., 125, 175...) for final refinements only
+
+#### Special Colors
+- `white` and `black` exist in their own `white-black` group
+- These are the only non-scaled colors
+
+### Non-Color Primitives
+Brand collection also contains raw values for:
+- **Spacing scale**: Raw pixel/rem values (2, 4, 8, 12, 16, 20, 24, 28, 32, 48, 64)
+- **Font families**: Font stack strings
+- **Font weights**: Numeric values (400, 500, 700)
+- **Font sizes**: Raw size values
+- **Border radii**: Raw pixel values
+- **Opacity values**: Percentage values
+- **Duration values**: Milliseconds for animations
+
+---
+
+## Tier 2: Alias Collection
+
+### Purpose
+Translates Brand primitives into **semantic tokens** that convey intent and meaning. This is the ONLY tier where semantic naming is applied.
+
+### Critical Rules
+1. Alias tokens **MUST** reference Brand tokens (never hardcoded values)
+2. Alias tokens **MUST NOT** reference other Alias tokens
+3. All semantic meaning is assigned at this tier only
+
+### Semantic Color Mapping
+
+| Alias Category | Brand Source | Usage Intent |
+|----------------|--------------|--------------|
+| `primary` | Slate or brand accent | Primary actions, links, emphasis |
+| `secondary` | (Optional) Secondary hue | Secondary actions, accents |
+| `tertiary` | (Optional) Tertiary hue | Tertiary UI elements |
+| `success` | Green family | Positive states, confirmations |
+| `warning` | Yellow/Amber family | Caution states, alerts |
+| `error` | Red family | Error states, destructive actions |
+| `information` | Blue family | Informational states, help |
+| `neutral-light` | Slate family | Light mode neutrals |
+| `neutral-dark` | Grey family | Dark mode neutrals |
+| `foundation` | White/Black | Base backgrounds, text |
+
+**Note**: `secondary` and `tertiary` are optional—not all brands require them.
+
+### Typography Aliases
+- Reference Brand font families and weights
+- Create semantic names: `font-heading`, `font-body`, `font-accent`, `font-subheading`
+- Map weights semantically: `weight-regular`, `weight-medium`, `weight-bold`
+
+### Spacing Aliases
+- Create t-shirt size aliases: `spacing-xs`, `spacing-sm`, `spacing-md`, `spacing-lg`, `spacing-xl`
+- Map to Brand spacing primitives
+
+---
+
+## Tier 3: Mapped Collection
+
+### Purpose
+The **component consumption layer**. All component styles MUST reference Mapped tokens. This tier handles theming (light/dark modes) and ensures consistency.
+
+### Token Categories
+
+Organize Mapped tokens by these categories:
+
+| Category | Purpose | Examples |
+|----------|---------|----------|
+| `surface` | Background colors | `surface-primary`, `surface-secondary`, `surface-elevated` |
+| `text` | Typography colors | `text-primary`, `text-secondary`, `text-disabled`, `text-on-primary` |
+| `icon` | Icon colors | `icon-primary`, `icon-secondary`, `icon-disabled` |
+| `border` | Border colors | `border-default`, `border-strong`, `border-subtle` |
+| `interactive` | Buttons, links, inputs | `interactive-primary`, `interactive-hover`, `interactive-pressed` |
+
+### Semantic States
+
+Each category should support these semantic states where applicable:
+
+| State | Usage |
+|-------|-------|
+| `primary` | Default/main usage |
+| `secondary` | Secondary emphasis |
+| `tertiary` | Minimal emphasis |
+| `disabled` | Non-interactive state |
+| `error` | Error feedback |
+| `success` | Success feedback |
+| `warning` | Warning feedback |
+| `information` | Informational feedback |
+
+### Light and Dark Mode
+
+**Every Mapped token MUST define both light and dark values.**
+
+Structure using Tokens Studio modes:
+```
+mapped/
+  surface-primary:
+    light: {alias.foundation.white}
+    dark: {alias.neutral-dark.900}
+```
+
+### Accessibility Requirements
+
+| Token Type | Contrast Requirement |
+|------------|---------------------|
+| `text-primary` on `surface-primary` | ≥ 4.5:1 (WCAG AA normal text) |
+| `text-secondary` on `surface-primary` | ≥ 4.5:1 (WCAG AA normal text) |
+| `text-large` on surfaces | ≥ 3:1 (WCAG AA large text) |
+| `text-disabled` | Reduced but ≥ 3:1 for legibility |
+| `icon-*` tokens | ≥ 3:1 against background |
+| `border-*` for UI controls | ≥ 3:1 against adjacent colors |
+
+#### On-Color Tokens
+For colored surfaces, create paired tokens:
+- `text-on-primary` — text color for use on `surface-primary-action`
+- `text-on-error` — text color for use on `surface-error`
+- Ensure these meet contrast requirements against their paired surface
+
+#### Focus States
+- Reuse semantic colors for focus indicators
+- Focus ring must have ≥ 3:1 contrast against adjacent colors
+- Recommended: `border-focus` mapped to `alias.primary` or dedicated focus color
+
+### Typography Mapped Tokens
+
+Create composite tokens for text styles:
+
+| Token | Purpose |
+|-------|---------|
+| `text-hero` | Hero/display text |
+| `text-heading` | Section headings (h1–h6) |
+| `text-subheading` | Subheadings, labels |
+| `text-body` | Body copy |
+| `text-caption` | Small text, metadata |
+| `text-placeholder` | Input placeholder text |
+
+These do NOT need a parent `base` group—they exist at the root of the text category.
+
+---
+
+## Naming Conventions
+
+### General Rules
+1. Use **kebab-case** for all token names: `surface-primary`, not `surfacePrimary`
+2. Follow the pattern: `[category]-[variant]-[state]`
+3. Keep names **descriptive but concise**
+4. Never include color values in names at Alias/Mapped tiers: use `primary-500`, not `blue-500`
+
+### Examples
+
+```
+# Brand (no meaning)
+brand.blue.500
+brand.slate.300
+brand.spacing.16
+
+# Alias (semantic)
+alias.primary.base
+alias.primary.hover
+alias.error.base
+alias.spacing.md
+
+# Mapped (component-ready)
+mapped.surface.primary
+mapped.text.primary
+mapped.text.on-primary
+mapped.border.default
+mapped.interactive.primary.default
+mapped.interactive.primary.hover
+```
+
+---
+
+## Responsive Collection
+
+### Purpose
+Handles breakpoint-specific token overrides for responsive design.
+All fonts by default are 'Inter', designer will define font in the font family variable
+
+### Structure
+- Define breakpoints as token sets: `responsive/mobile`, `responsive/tablet`, `responsive/desktop`
+- Override only tokens that change between breakpoints (e.g., spacing, font sizes)
+- Reference base Mapped tokens for unchanged values
+
+### Common Responsive Tokens
+- `spacing-section` — vertical section spacing
+- `spacing-gutter` — horizontal page gutters
+- `font-size-heading` — responsive heading sizes
+- `font-size-body` — responsive body sizes
+
+---
+
+## Integration with Horizon Theme
+
+### CSS Variable Mapping
+Mapped tokens export to CSS custom properties used in the theme:
+- `--color-background` ← `mapped.surface.primary`
+- `--color-foreground` ← `mapped.text.primary`
+- `--color-primary` ← `mapped.interactive.primary.default`
+- `--spacing-*` ← `mapped.spacing.*`
+
+### Color Scheme Alignment
+The Mapped collection's light/dark modes align with Horizon's color scheme system:
+- `scheme-1` = light mode token values
+- `scheme-2` = dark mode token values
+
+### Component Token Consumption
+When building components, always reference the CSS variable that corresponds to the Mapped token:
+
+```css
+/* ✅ Correct — uses mapped token via CSS variable */
+.button-primary {
+  background: var(--color-primary-button-background);
+  color: var(--color-primary-button-text);
+}
+
+/* ❌ Wrong — hardcoded value */
+.button-primary {
+  background: #000F9F;
+}
+
+/* ❌ Wrong — referencing Brand/Alias tier */
+.button-primary {
+  background: var(--brand-blue-600);
+}
+```
+
+---
+
+## Checklist for Token Creation
+
+Before finalizing any token set, verify:
+
+- [ ] **Brand tokens** contain no semantic naming
+- [ ] **Alias tokens** only reference Brand tokens
+- [ ] **Mapped tokens** only reference Alias tokens
+- [ ] All Mapped tokens have light AND dark mode values
+- [ ] Text/icon tokens meet WCAG AA contrast requirements (≥ 4.5:1)
+- [ ] On-color tokens exist for colored surfaces
+- [ ] Disabled states maintain legibility (≥ 3:1 contrast)
+- [ ] Token names follow kebab-case convention
+- [ ] No hardcoded values exist in Alias or Mapped tiers
+- [ ] Responsive overrides are minimal and intentional
+- [ ] All fonts by default are 'Inter', designer will define font in the font family variable
+ 
